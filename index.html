@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GEO-Score — AI Content Auditor & Optimizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #f4f0e6;
+    --bg2: #ffffff;
+    --bg3: #f9f7f2;
+    --border: #e2ddd3;
+    --border2: #cfc9bc;
+    --primary: #3a5a2b;
+    --primary-light: #4e7a3a;
+    --primary-glow: rgba(58,90,43,0.10);
+    --primary-glow2: rgba(58,90,43,0.05);
+    --green: #3a8a4e;
+    --yellow: #c89b2a;
+    --red: #c0392b;
+    --accent: #8fbc5a;
+    --text: #1e2a18;
+    --text2: #5a6b4e;
+    --text3: #9aaa8a;
+    --font-head: 'Fraunces', serif;
+    --font-body: 'Plus Jakarta Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 2px 12px rgba(30,42,24,0.08);
+    --shadow-lg: 0 8px 32px rgba(30,42,24,0.12);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 0% 0%, rgba(143,188,90,0.13) 0%, transparent 55%),
+      radial-gradient(ellipse at 100% 100%, rgba(58,90,43,0.08) 0%, transparent 50%);
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 40px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(244,240,230,0.92);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 1px 0 var(--border);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.5px;
+    color: var(--primary);
+  }
+
+  .logo-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: var(--shadow);
+  }
+
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--primary);
+    background: var(--primary-glow);
+    border: 1px solid rgba(58,90,43,0.2);
+    padding: 3px 8px;
+    border-radius: 100px;
+    letter-spacing: 0.05em;
+  }
+
+  .api-toggle {
+    display: none;
+  }
+
+  /* ── API KEY PANEL ── */
+  .api-panel {
+    position: relative;
+    z-index: 99;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 40px;
+    display: none;
+    align-items: center;
+    gap: 12px;
+    animation: slideDown 0.2s ease;
+  }
+  .api-panel.open { display: flex; }
+  @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+
+  .api-panel label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text2);
+    white-space: nowrap;
+  }
+
+  .api-input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 8px 14px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .api-input:focus { border-color: var(--amber); }
+
+  .btn-save {
+    padding: 8px 18px;
+    background: var(--amber);
+    color: #0d0f14;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-save:hover { opacity: 0.85; }
+
+  .api-status {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 100px;
+  }
+  .api-status.set { background: rgba(61,214,140,0.1); color: var(--green); border: 1px solid rgba(61,214,140,0.2); }
+  .api-status.unset { background: rgba(245,78,66,0.1); color: var(--red); border: 1px solid rgba(245,78,66,0.2); }
+
+  /* ── MAIN LAYOUT ── */
+  .main {
+    position: relative;
+    z-index: 1;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 40px 40px 80px;
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 28px;
+    align-items: start;
+  }
+
+  /* ── LEFT COLUMN ── */
+  .input-section { display: flex; flex-direction: column; gap: 20px; }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--primary);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    opacity: 0.7;
+  }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .card:hover { border-color: var(--border2); box-shadow: var(--shadow-lg); }
+
+  .card-title {
+    font-family: var(--font-head);
+    font-weight: 600;
+    font-size: 17px;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+  .card-desc {
+    color: var(--text2);
+    font-size: 13px;
+    margin-bottom: 16px;
+    font-weight: 400;
+  }
+
+  .textarea-wrapper {
+    position: relative;
+  }
+
+  #article-input {
+    width: 100%;
+    height: 280px;
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.7;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  #article-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+  #article-input::placeholder { color: var(--text3); }
+
+  .textarea-meta {
+    position: absolute;
+    bottom: 10px;
+    right: 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text3);
+    pointer-events: none;
+  }
+
+  /* URL input */
+  .url-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .url-input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 9px 14px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .url-input:focus { border-color: var(--amber); }
+  .url-input::placeholder { color: var(--text3); }
+
+  /* config options */
+  .config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .config-item label {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text3);
+    margin-bottom: 6px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .config-select {
+    width: 100%;
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a6b4e' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .config-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+  .config-select option { background: var(--bg3); }
+
+  /* ── ANALYZE BUTTON ── */
+  .btn-analyze {
+    width: 100%;
+    padding: 16px;
+    background: var(--primary);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    letter-spacing: -0.2px;
+    box-shadow: 0 4px 14px rgba(58,90,43,0.25);
+  }
+  .btn-analyze:hover:not(:disabled) {
+    background: var(--primary-light);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(58,90,43,0.35);
+  }
+  .btn-analyze:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ── RIGHT COLUMN ── */
+  .results-column {
+    position: sticky;
+    top: 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ── SCORE CARD ── */
+  .score-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+
+  .score-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--primary);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    opacity: 0.7;
+  }
+
+  .score-ring-wrap {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    margin: 0 auto 16px;
+  }
+
+  .score-ring {
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+
+  .score-ring-bg {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 10;
+  }
+
+  .score-ring-fill {
+    fill: none;
+    stroke: var(--primary);
+    stroke-width: 10;
+    stroke-linecap: round;
+    stroke-dasharray: 408;
+    stroke-dashoffset: 408;
+    transition: stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1), stroke 0.4s;
+    filter: drop-shadow(0 0 6px rgba(58,90,43,0.4));
+  }
+
+  .score-number {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-head);
+    font-weight: 800;
+    font-size: 42px;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .score-number span {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text3);
+    font-family: var(--font-mono);
+  }
+
+  .score-grade {
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+
+  .score-grade-desc {
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  /* ── DIMENSION BARS ── */
+  .dimensions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+    text-align: left;
+  }
+
+  .dim-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .dim-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .dim-name {
+    font-size: 12px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .dim-desc {
+    font-size: 10px;
+    color: var(--text3);
+    line-height: 1.4;
+    margin-top: 1px;
+  }
+
+  .dim-score {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .dim-bar {
+    height: 5px;
+    background: var(--border2);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .dim-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+    width: 0%;
+    transition: width 1s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    background: var(--bg2);
+    border: 1.5px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 40px 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    box-shadow: var(--shadow);
+  }
+  .empty-state .icon { font-size: 36px; opacity: 0.4; }
+  .empty-state p { color: var(--text3); font-size: 13px; max-width: 240px; line-height: 1.5; }
+
+  /* ── LOADING ── */
+  .loading-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 48px 24px;
+    text-align: center;
+    background: var(--bg2);
+    border: 1.5px solid var(--primary);
+    border-radius: var(--radius);
+    box-shadow: 0 0 28px rgba(58,90,43,0.12);
+  }
+  .loading-state.active { display: flex; animation: fadeIn 0.3s ease; }
+
+  .btn-analyze.analyzing {
+    animation: btnPulse 1.2s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes btnPulse {
+    0%, 100% { opacity: 1; box-shadow: 0 4px 14px rgba(58,90,43,0.25); }
+    50% { opacity: 0.8; box-shadow: 0 0 0 10px rgba(58,90,43,0); }
+  }
+
+  .spinner {
+    width: 44px;
+    height: 44px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{ opacity:1 } 50%{ opacity:0.4 } }
+
+  /* ── RECOMMENDATIONS ── */
+  .recs-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    display: none;
+    box-shadow: var(--shadow);
+  }
+  .recs-card.visible { display: block; }
+
+  .rec-item {
+    display: flex;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    animation: fadeIn 0.4s ease both;
+  }
+  .rec-item:last-child { border-bottom: none; padding-bottom: 0; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  .rec-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .rec-icon.high { background: rgba(245,78,66,0.12); }
+  .rec-icon.med { background: rgba(245,200,66,0.12); }
+  .rec-icon.low { background: rgba(61,214,140,0.12); }
+
+  .rec-body { flex: 1; }
+  .rec-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; color: var(--text); }
+  .rec-desc { font-size: 12px; color: var(--text2); line-height: 1.55; }
+
+  /* ── DETAIL BREAKDOWN ── */
+  .detail-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    display: none;
+    box-shadow: var(--shadow);
+  }
+  .detail-card.visible { display: block; }
+
+  .detail-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    background: var(--bg3);
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+  }
+
+  .detail-tab {
+    flex: 1;
+    padding: 7px;
+    border: none;
+    background: transparent;
+    color: var(--text3);
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .detail-tab.active { background: var(--bg2); color: var(--primary); border: 1px solid var(--border); }
+
+  .detail-panel { display: none; }
+  .detail-panel.active { display: block; }
+
+  .detail-score-big {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .detail-score-big .num {
+    font-family: var(--font-head);
+    font-size: 36px;
+    font-weight: 800;
+  }
+  .detail-score-big .denom {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--text3);
+  }
+
+  .detail-feedback {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.6;
+    padding: 12px 14px;
+    background: var(--bg3);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--primary);
+    margin-bottom: 14px;
+  }
+
+  .improvement-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .improvement-item {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+  .improvement-item::before {
+    content: '→';
+    color: var(--primary);
+    font-family: var(--font-mono);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* ── ERROR STATE ── */
+  .error-msg {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(192,57,43,0.06);
+    border: 1px solid rgba(192,57,43,0.2);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--red);
+  }
+  .error-msg.visible { display: flex; }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 24px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--text3);
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--primary); text-decoration: none; font-weight: 500; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    header { padding: 16px 20px; }
+    .api-panel { padding: 14px 20px; flex-wrap: wrap; }
+    .main { grid-template-columns: 1fr; padding: 24px 20px 60px; }
+    .results-column { position: static; }
+  }
+
+  /* ── HERO INTRO ── */
+  .hero {
+    position: relative;
+    z-index: 1;
+    padding: 48px 40px 0;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--primary-glow2);
+    border: 1px solid rgba(58,90,43,0.18);
+    padding: 5px 14px;
+    border-radius: 100px;
+    margin-bottom: 16px;
+    letter-spacing: 0.06em;
+  }
+
+  .hero-title {
+    font-family: var(--font-head);
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.5px;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--primary);
+  }
+
+  .hero-sub {
+    color: var(--text2);
+    font-size: 15px;
+    max-width: 580px;
+    line-height: 1.6;
+    margin-bottom: 32px;
+  }
+
+  .hero-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 40px;
+  }
+
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text2);
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 5px 13px;
+    border-radius: 100px;
+    box-shadow: 0 1px 4px rgba(30,42,24,0.06);
+  }
+  .chip .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  @media (max-width: 900px) {
+    .hero { padding: 32px 20px 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">🌱</div>
+    GEO-Score
+    <span class="badge">BETA</span>
+  </div>
+  <button class="api-toggle" style="display:none" id="api-toggle-btn"></button>
+</header>
+
+<!-- ── API KEY PANEL (disabled - offline mode) ── -->
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="hero-tag">🌿 Generative Engine Optimization</div>
+  <h1 class="hero-title">Audit your content.<br/>Dominate <em>AI-generated answers</em>.</h1>
+  <p class="hero-sub">Analyze whether your article is optimized to be cited by models like ChatGPT, Perplexity, Gemini, and Claude. Get a GEO score with actionable improvements.</p>
+  <div class="hero-chips">
+    <div class="chip"><span class="dot"></span>Factual Density</div>
+    <div class="chip"><span class="dot"></span>Authority Citations</div>
+    <div class="chip"><span class="dot"></span>Semantic Structure</div>
+    <div class="chip"><span class="dot"></span>Answer-Readiness</div>
+    <div class="chip"><span class="dot"></span>AI Legibility</div>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+  <!-- LEFT -->
+  <div class="input-section">
+
+    <!-- Article Input -->
+    <div class="card">
+      <div class="section-label">01 — Content</div>
+      <div class="card-title">Paste your article</div>
+      <div class="card-desc">Minimum 200 words for an accurate analysis. Include headings (H1, H2, H3) as plain text.</div>
+      <div class="textarea-wrapper">
+        <textarea id="article-input" placeholder="Paste the full text of your article here, including title and headings..." oninput="updateWordCount()"></textarea>
+        <div class="textarea-meta" id="word-count">0 words</div>
+      </div>
+    </div>
+
+    <!-- Config -->
+    <div class="card">
+      <div class="section-label">02 — Settings</div>
+      <div class="card-title">Analysis parameters</div>
+      <div class="card-desc">Customize the analysis for your specific use case.</div>
+      <div class="config-grid">
+        <div class="config-item">
+          <label>CONTENT TYPE</label>
+          <select class="config-select" id="content-type">
+            <option value="article">Blog article</option>
+            <option value="landing">Landing page</option>
+            <option value="guide">Guide / Tutorial</option>
+            <option value="comparison">Comparison</option>
+            <option value="news">News report</option>
+          </select>
+        </div>
+        <div class="config-item">
+          <label>INDUSTRY</label>
+          <select class="config-select" id="industry">
+            <option value="general">General</option>
+            <option value="children">Children & Parenting</option>
+            <option value="tech">Technology</option>
+            <option value="health">Health</option>
+            <option value="finance">Finance</option>
+            <option value="marketing">Marketing</option>
+            <option value="legal">Legal</option>
+            <option value="education">Education</option>
+          </select>
+        </div>
+        <div class="config-item">
+          <label>TARGET LANGUAGE</label>
+          <select class="config-select" id="target-lang">
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="pt">Portuguese</option>
+          </select>
+        </div>
+        <div class="config-item">
+          <label>TARGET AI MODEL</label>
+          <select class="config-select" id="target-model">
+            <option value="general">General (all models)</option>
+            <option value="perplexity">Perplexity AI</option>
+            <option value="chatgpt">ChatGPT Search</option>
+            <option value="gemini">Gemini</option>
+            <option value="claude">Claude</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div class="error-msg" id="error-msg">
+      <span>⚠</span>
+      <span id="error-text">Error analyzing content.</span>
+    </div>
+
+    <!-- CTA -->
+    <button class="btn-analyze" id="btn-analyze" onclick="analyzeContent()">
+      <span>🌱</span> Analyze & Score Article
+    </button>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="results-column">
+
+    <!-- Score Ring -->
+    <div class="score-card" id="score-card">
+      <div class="score-label">GEO Score</div>
+
+      <div class="score-ring-wrap">
+        <svg viewBox="0 0 140 140" class="score-ring" width="160" height="160">
+          <circle cx="70" cy="70" r="65" class="score-ring-bg"/>
+          <circle cx="70" cy="70" r="65" class="score-ring-fill" id="score-ring-fill"/>
+        </svg>
+        <div class="score-number" id="score-display">
+          <span style="font-size:28px;color:var(--text3)">—</span>
+          <span>/100</span>
+        </div>
+      </div>
+
+      <div class="score-grade" id="score-grade">Pending</div>
+      <div class="score-grade-desc" id="score-grade-desc">Analyze your article to get your score</div>
+
+      <div class="dimensions" id="dimensions">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-state" id="loading-state">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loading-text">Analyzing factual density...</div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-state" id="empty-state">
+      <div class="icon">📄</div>
+      <p>Recommendations will appear here after the analysis</p>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="recs-card" id="recs-card">
+      <div class="section-label">Priority recommendations</div>
+      <div id="recs-list"></div>
+    </div>
+
+    <!-- Detail breakdown -->
+    <div class="detail-card" id="detail-card">
+      <div class="section-label">Breakdown by dimension</div>
+      <div class="detail-tabs" id="detail-tabs"></div>
+      <div id="detail-panels"></div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  GEO-Score runs entirely in your browser — no API key, no internet connection required. 
+  Built for <a href="https://sproutsi.co" target="_blank">Sproutsi</a> with ♥
+</footer>
+
+<script>
+// ── STATE ──
+let isAnalyzing = false;
+
+// ── DIMENSIONS CONFIG ──
+const DIMS = [
+  { key: 'factual_density',     label: 'Factual Density',     max: 25, color: '#f5a623', desc: 'Stats, percentages, numbers & age-specific data AI models use to verify claims.' },
+  { key: 'authority_citations', label: 'Authority Citations', max: 20, color: '#f5c842', desc: 'Named experts, institutions (AAP, APA) & research citations that build trust.' },
+  { key: 'semantic_structure',  label: 'Semantic Structure',  max: 20, color: '#3dd68c', desc: 'H1/H2/H3 headings, lists & short paragraphs that help AI parse your content.' },
+  { key: 'answer_readiness',    label: 'Answer-Readiness',    max: 20, color: '#5bc8f5', desc: 'Direct Q&A format, definitions & summaries AI engines extract as featured answers.' },
+  { key: 'ai_legibility',       label: 'AI Legibility',       max: 15, color: '#a78bfa', desc: 'Short sentences, active voice & clear language that AI can confidently quote.' },
+];
+
+// ══════════════════════════════════════════════════════════════
+// ── SPROUTSI DOMAIN DICTIONARIES (Children & Parenting niche) ──
+// ══════════════════════════════════════════════════════════════
+const DICT = {
+  experts: [
+    'piaget','vygotsky','bowlby','montessori','waldorf','erikson','bandura',
+    'bronfenbrenner','ainsworth','spock','brazelton','gesell','winnicott',
+    'siegel','payne','lansbury','neufeld','gordon','faber','mazlish',
+    'dr. becky','becky kennedy','daniel siegel','ross greene','stanley greenspan',
+    'jean piaget','lev vygotsky','john bowlby','maria montessori','rudolf steiner',
+    'urie bronfenbrenner','mary ainsworth','bruce perry','mona delahooke',
+    'janet lansbury','magda gerber','alfie kohn',
+  ],
+  institutions: [
+    'aap','apa','who','cdc','nimh','harvard','yale','stanford','mit',
+    'oxford','cambridge','unicef','zero to three','naeyc',
+    'american academy of pediatrics','american psychological association',
+    'world health organization','centers for disease control',
+    'national institutes of health','national institute of mental health',
+    'center on the developing child','society for research in child development',
+    'child mind institute',"boston children's","children's hospital",
+    'journal of child psychology','pediatrics journal','developmental psychology',
+    'child development','early childhood education journal',
+  ],
+  citationPhrases: [
+    'according to','research shows','studies show','study found','research found',
+    'evidence suggests','data shows','published in','journal of','researchers at',
+    'a study by','findings from','experts say','pediatricians recommend',
+    'psychologists suggest','clinical research','peer-reviewed','meta-analysis',
+    'longitudinal study','systematic review','as cited in','science-backed',
+    'evidence-based','developmentally appropriate','research-backed',
+    'child development research','developmental science',
+  ],
+  milestoneTerms: [
+    'developmental milestone','age-appropriate','developmental stage',
+    'cognitive development','social-emotional','emotional development',
+    'language development','motor skills','fine motor','gross motor',
+    'executive function','self-regulation','co-regulation','attachment',
+    'secure attachment','brain development','neural pathway','neuroplasticity',
+    'prefrontal cortex','amygdala','window of tolerance','zone of proximal development',
+    'scaffolding','sensory processing','sensory integration','theory of mind',
+    'object permanence','symbolic play','parallel play','cooperative play',
+    'ages 0 to 2','ages 3 to 5','ages 6 to 9','toddler','preschool age',
+    'school-age','early childhood','middle childhood','infancy','infant',
+    'newborn','baby','toddlers','preschoolers','kindergartners',
+  ],
+  parentingApproaches: [
+    'gentle parenting','positive parenting','positive discipline','authoritative parenting',
+    'montessori approach','waldorf approach','attachment parenting','responsive parenting',
+    'conscious parenting','mindful parenting','positive reinforcement','natural consequences',
+    'logical consequences','time-in','love and logic','collaborative problem solving',
+    'unconditional parenting','whole-brain child','no-drama discipline','connect then redirect',
+    'emotion coaching','co-regulation','validate and redirect','name it to tame it',
+    'playful parenting','hand in hand parenting',
+  ],
+  behaviorTopics: [
+    'potty training','toilet training','bedtime routine','sleep routine','sleep training',
+    'building confidence','self-confidence','self-esteem','emotional regulation',
+    'big emotions','tantrums','meltdowns','emotional outbursts','frustration tolerance',
+    'sharing','kindness','empathy','overcoming fears','separation anxiety',
+    'first day of school','school anxiety','social skills','making friends',
+    'sibling rivalry','jealousy','aggression','hitting','biting',
+    'defiance','refusing','avoidance','shyness','nightmares','fear of the dark',
+    'worry','anxiety','impulse control','attention','focus','grit','resilience',
+    'growth mindset','persistence','delayed gratification',
+  ],
+  storyTerms: [
+    "children's book","picture book","storybook","bedtime story","read aloud",
+    'bibliotherapy','narrative therapy','story-based learning','book therapy',
+    'reading to children','shared reading','interactive reading','storytime',
+    'moral of the story','lesson in the story','character development',
+    'personalized story','representative story','mirror book','window book',
+    'diverse books','inclusive stories','early literacy','reading comprehension',
+    'love of reading','reading habit','reading aloud benefits',
+  ],
+  questionSignals: [
+    'what is','what are','how to','how can','how do','why does','why is',
+    'when should','is it normal','can children','should parents',
+    'what causes','what helps','tips for','steps to','ways to',
+    'the answer is',"here's how",'here is how','the key is','one way to',
+    'you can help','parents can','the best approach','a helpful strategy',
+    'try this','consider','an effective method',
+  ],
+  definitionSignals: [
+    ' is defined as',' is a ',' refers to ',' means ',' known as ',
+    ' describes ',' involves ',' is when ',' is the process ',
+    'in other words','simply put','to put it simply','this means',
+  ],
+};
+
+// ══════════════════════════════════════════
+// ── HEURISTIC SCORING ENGINE ──
+// ══════════════════════════════════════════
+
+function analyzeOffline(text, contentType, industry, targetLang, targetModel) {
+  const lower = text.toLowerCase();
+  const words = text.trim().split(/\s+/);
+  const wordCount = words.length;
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
+  const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 20);
+  const lines = text.split('\n').filter(l => l.trim().length > 0);
+
+  const factual    = scoreFactualDensity(text, lower, wordCount, industry);
+  const authority  = scoreAuthorityCitations(lower, industry);
+  const structure  = scoreSemanticStructure(text, lines, paragraphs, sentences, wordCount);
+  const answerReady = scoreAnswerReadiness(text, lower, sentences);
+  const legibility = scoreAiLegibility(text, sentences, wordCount);
+
+  const overall = factual.score + authority.score + structure.score + answerReady.score + legibility.score;
+
+  return {
+    overall_score: Math.min(100, overall),
+    grade: getGrade(overall),
+    grade_description: getGradeDesc(overall),
+    summary: buildSummary(overall, factual, authority, structure, answerReady, legibility),
+    dimensions: {
+      factual_density:     factual,
+      authority_citations: authority,
+      semantic_structure:  structure,
+      answer_readiness:    answerReady,
+      ai_legibility:       legibility,
+    },
+    top_recommendations: buildRecommendations(factual, authority, structure, answerReady, legibility, industry),
+  };
+}
+
+// ── FACTUAL DENSITY ──
+function scoreFactualDensity(text, lower, wordCount, industry) {
+  let hits = 0; const found = [];
+  const numMatches = (text.match(/\b\d[\d,]*\.?\d*\s*(%|percent|children|kids|parents|families|studies|years?|months?|weeks?|hours?|minutes?)\b/gi) || []);
+  hits += Math.min(8, numMatches.length * 2);
+  if (numMatches.length) found.push(numMatches.length + ' numeric fact(s)');
+  const ageMatches = (text.match(/\b(age[sd]?\s+\d[\d\u2013-]*\s*(to|\u2013|-|and)?\s*\d*|infants?|toddlers?|preschool(ers?)?|school-age\s+children)\b/gi) || []);
+  hits += Math.min(4, ageMatches.length * 2);
+  if (ageMatches.length) found.push('age refs: ' + ageMatches.length);
+  const studyPhrases = ['research shows','studies show','study found','research found','evidence suggests','data shows','peer-reviewed','meta-analysis','longitudinal'];
+  const studyHits = studyPhrases.filter(p => lower.includes(p));
+  hits += Math.min(6, studyHits.length * 2);
+  const milestoneHits = DICT.milestoneTerms.filter(t => lower.includes(t));
+  hits += Math.min(4, milestoneHits.length);
+  if (milestoneHits.length) found.push('dev terms: ' + milestoneHits.length);
+  if ((hits / (wordCount / 100)) >= 3) hits += 3;
+  const score = Math.min(25, hits);
+
+  let feedback;
+  if (score >= 20) feedback = 'Excellent factual density. The article includes solid numeric data, age-specific references, and developmental terminology that AI models favor for citation.';
+  else if (score >= 13) feedback = 'Good factual grounding. Found: ' + (found.join(', ') || 'some data') + '. Adding more specific statistics (e.g., percentages from studies, age ranges) would push this higher.';
+  else if (score >= 7) feedback = 'Limited factual density. ' + (found.length ? 'Found: ' + found.join(', ') + '. ' : '') + 'AI engines strongly prefer articles with verifiable numbers, research findings, and data points.';
+  else feedback = 'Very low factual density. This article lacks statistics, percentages, and data-driven claims. Add specific numbers wherever possible.';
+
+  const improvements = [];
+  if (numMatches.length < 3) improvements.push('Add at least 3–5 specific statistics (e.g., "72% of children experience separation anxiety before age 5").');
+  if (ageMatches.length < 2) improvements.push('Include specific age ranges for each developmental tip (e.g., "for children ages 3–5…").');
+  if (milestoneHits.length < 3) improvements.push('Incorporate established developmental milestone terminology (e.g., "executive function," "self-regulation," "zone of proximal development").');
+  if (improvements.length === 0) improvements.push('Consider adding a data-table or "by the numbers" sidebar to consolidate your key statistics.');
+  return { score, max: 25, feedback, improvements };
+}
+
+// ── AUTHORITY CITATIONS ──
+function scoreAuthorityCitations(lower, industry) {
+  let hits = 0;
+  const expertHits = DICT.experts.filter(e => lower.includes(e));
+  hits += Math.min(8, expertHits.length * 3);
+  const institutionHits = DICT.institutions.filter(i => lower.includes(i));
+  hits += Math.min(6, institutionHits.length * 2);
+  const citationHits = DICT.citationPhrases.filter(p => lower.includes(p));
+  hits += Math.min(6, citationHits.length);
+  const urlMatches = (lower.match(/https?:\/\/|www\.|\.(org|edu|gov)/g) || []);
+  hits += Math.min(4, urlMatches.length * 2);
+  const score = Math.min(20, hits);
+
+  let feedback;
+  if (score >= 16) feedback = 'Strong authority signals. The article references ' + (expertHits.length ? 'experts (' + expertHits.slice(0,3).join(', ') + ')' : 'relevant authorities') + ' and ' + (institutionHits.length ? 'institutions (' + institutionHits.slice(0,2).join(', ') + ')' : 'credible sources') + '. This is exactly what triggers AI citation.';
+  else if (score >= 10) feedback = 'Moderate authority. ' + (expertHits.length ? 'Found experts: ' + expertHits.slice(0,2).join(', ') + '. ' : 'No named experts found. ') + (institutionHits.length ? 'Institutions: ' + institutionHits.slice(0,2).join(', ') + '.' : 'No institutional sources cited.') + ' More explicit sourcing would improve AI citability significantly.';
+  else feedback = 'Low authority signals. The article lacks references to named experts, research institutions, or published studies. For the children & parenting niche, citing pediatric psychologists, the AAP, or peer-reviewed studies is critical for AI citation.';
+
+  const improvements = [];
+  if (expertHits.length === 0) improvements.push('Name at least one recognized expert (e.g., "According to child psychologist Dr. Daniel Siegel…" or reference Montessori / Piaget research).');
+  if (institutionHits.length === 0) improvements.push('Reference a credible institution such as the American Academy of Pediatrics (AAP), APA, or a university study.');
+  if (citationHits.length < 2) improvements.push('Add explicit citation phrases: "A 2023 study published in Developmental Psychology found that…" or "According to the AAP…".');
+  if (urlMatches.length === 0) improvements.push('Include at least one link to a primary source (.org, .edu, or .gov) to reinforce credibility.');
+  if (improvements.length === 0) improvements.push('Link directly to the specific study or publication page for each claim rather than general homepages.');
+  return { score, max: 20, feedback, improvements };
+}
+
+// ── SEMANTIC STRUCTURE ──
+function scoreSemanticStructure(text, lines, paragraphs, sentences, wordCount) {
+  let hits = 0;
+  const h1 = (text.match(/^#\s.+|<h1[^>]*>/gmi) || []).length;
+  const h2 = (text.match(/^##\s.+|<h2[^>]*>/gmi) || []).length;
+  const h3 = (text.match(/^###\s.+|<h3[^>]*>/gmi) || []).length;
+  const totalHeadings = h1 + h2 + h3;
+  hits += Math.min(8, totalHeadings * 2);
+  const listItems = (text.match(/^[-*\u2022]\s.+|^\d+\.\s.+/gm) || []).length;
+  hits += Math.min(4, Math.floor(listItems / 2));
+  const shortParas = paragraphs.filter(p => p.trim().split(/\s+/).length <= 100).length;
+  if (paragraphs.length > 0) hits += Math.round((shortParas / paragraphs.length) * 4);
+  if (wordCount >= 600) hits += 2;
+  if (wordCount >= 1000) hits += 2;
+  const score = Math.min(20, hits);
+
+  let feedback;
+  if (score >= 16) feedback = 'Well-structured content. Found ' + totalHeadings + ' heading(s), ' + listItems + ' list item(s), and ' + paragraphs.length + ' paragraph(s). This hierarchy helps AI models parse and segment content for snippet extraction.';
+  else if (score >= 10) feedback = 'Moderate structure. ' + (totalHeadings > 0 ? totalHeadings + ' heading(s) detected. ' : 'No clear headings found. ') + (listItems > 0 ? listItems + ' list items found.' : 'No lists detected.') + ' AI engines rely heavily on H2/H3 structure to extract relevant sections.';
+  else feedback = 'Weak structure. ' + (totalHeadings === 0 ? 'No headings (H1/H2/H3) detected — this is the most critical missing element. ' : '') + 'Content without clear hierarchy is rarely featured in AI-generated answers because the engine cannot identify which section addresses which question.';
+
+  const improvements = [];
+  if (h2 < 3) improvements.push('Add at least 3 H2 subheadings, each phrased as a question or clear topic (e.g., "Why Do Toddlers Have Tantrums?" or "5 Strategies for Emotional Regulation").');
+  if (listItems < 5) improvements.push('Convert at least one section into a numbered or bulleted list. AI models frequently pull structured lists into their responses.');
+  const longParas = paragraphs.filter(p => p.trim().split(/\s+/).length > 120).length;
+  if (longParas > 0) improvements.push('Break up ' + longParas + ' long paragraph(s) into shorter chunks of 2–4 sentences. Dense walls of text are skipped by AI crawlers.');
+  if (wordCount < 600) improvements.push('Expand the article to at least 800–1,000 words. Longer, well-structured content ranks better for GEO.');
+  if (improvements.length === 0) improvements.push('Add a brief intro paragraph (2–3 sentences) at the start of each major section as an "AI-ready summary" of that section.');
+  return { score, max: 20, feedback, improvements };
+}
+
+// ── ANSWER-READINESS ──
+function scoreAnswerReadiness(text, lower, sentences) {
+  let hits = 0;
+  const questions = (text.match(/\?/g) || []).length;
+  hits += Math.min(6, questions * 2);
+  const questionHeadings = (text.match(/^#{1,3}.+\?/gm) || []).length;
+  hits += Math.min(4, questionHeadings * 2);
+  const defHits = DICT.definitionSignals.filter(d => lower.includes(d));
+  hits += Math.min(4, defHits.length * 2);
+  const answerHits = DICT.questionSignals.filter(p => lower.includes(p));
+  hits += Math.min(4, Math.floor(answerHits.length / 2));
+  if (lower.includes('faq') || lower.includes('frequently asked') || lower.includes('common questions')) hits += 4;
+  if (lower.match(/in summary|in conclusion|the bottom line|key takeaway|to sum up|final thoughts/)) hits += 2;
+  const score = Math.min(20, hits);
+
+  let feedback;
+  if (score >= 16) feedback = 'Highly answer-ready. The article poses direct questions and provides clear answers — the format AI models scan for when building responses. ' + (questionHeadings > 0 ? questionHeadings + ' question-style heading(s) detected.' : '');
+  else if (score >= 10) feedback = 'Moderately answer-ready. Found ' + questions + ' question(s) and ' + defHits.length + ' definition signal(s). Structure more content in explicit Q&A format and add clear definitions to increase citability.';
+  else feedback = 'Low answer-readiness. The content is not structured around direct questions and answers. AI engines like Perplexity and Claude search specifically for content that directly answers a query — phrasing sections as questions dramatically increases citation probability.';
+
+  const improvements = [];
+  if (questions < 3) improvements.push('Phrase at least 3 section headings as direct questions parents would ask (e.g., "How Can I Help My Child Manage Big Emotions?" or "What Age Should Children Start Learning Emotional Regulation?").');
+  if (!lower.includes('faq')) improvements.push('Add a short FAQ section at the end with 3–5 of the most common parent questions on this topic.');
+  if (defHits.length < 2) improvements.push("Define key terms explicitly (e.g., \"Emotional regulation is the ability to manage one's emotional responses in healthy ways\u2026\"). AI models favor content with clear, quotable definitions.");
+  if (!lower.match(/in summary|key takeaway|bottom line|to sum up/)) improvements.push('Add a "Key Takeaways" or "Summary" section at the end. AI models frequently pull these as featured snippets.');
+  if (improvements.length === 0) improvements.push('Consider adding a "Quick Answer" box at the very top of the article with a 2–3 sentence direct answer to the main question. This is the #1 format for AI-generated responses.');
+  return { score, max: 20, feedback, improvements };
+}
+
+// ── AI LEGIBILITY ──
+function scoreAiLegibility(text, sentences, wordCount) {
+  let hits = 0;
+  const avgSentLen = wordCount / Math.max(1, sentences.length);
+  if (avgSentLen <= 20) hits += 5;
+  else if (avgSentLen <= 26) hits += 3;
+  else if (avgSentLen <= 32) hits += 1;
+  const passiveMatches = (text.match(/\b(is|are|was|were|be|been|being)\s+\w+ed\b/gi) || []).length;
+  const passiveRatio = passiveMatches / Math.max(1, sentences.length);
+  if (passiveRatio < 0.1) hits += 4;
+  else if (passiveRatio < 0.2) hits += 2;
+  const jargonWithoutDef = ['dysregulation','scaffolding','proprioception','interoception','neuroception']
+    .filter(j => text.toLowerCase().includes(j) && !text.toLowerCase().includes(j + ' is') && !text.toLowerCase().includes(j + ' refers'));
+  hits -= Math.min(2, jargonWithoutDef.length);
+  const shortSentences = sentences.filter(s => s.trim().split(/\s+/).length <= 12).length;
+  const sentVariety = shortSentences / Math.max(1, sentences.length);
+  if (sentVariety > 0.2 && sentVariety < 0.7) hits += 3;
+  else if (sentVariety > 0) hits += 1;
+  const transitionMatches = (text.match(/\b(however|therefore|furthermore|additionally|in addition|first|second|finally|for example|for instance|as a result|in contrast|on the other hand)\b/gi) || []).length;
+  hits += Math.min(3, transitionMatches);
+  const score = Math.max(0, Math.min(15, hits));
+
+  let feedback;
+  if (score >= 12) feedback = 'Excellent AI legibility. Average sentence length of ~' + Math.round(avgSentLen) + ' words is within the ideal range. Clear, direct language makes this easy for AI engines to parse and extract.';
+  else if (score >= 8) feedback = 'Good legibility. Average sentence length: ~' + Math.round(avgSentLen) + ' words. ' + (passiveRatio > 0.15 ? 'Consider reducing passive voice — active voice is clearer for AI parsing.' : '');
+  else feedback = 'Low AI legibility. Average sentence length of ~' + Math.round(avgSentLen) + ' words ' + (avgSentLen > 25 ? 'is too long. ' : 'could be improved. ') + (passiveRatio > 0.2 ? 'High passive voice detected. ' : '') + (jargonWithoutDef.length > 0 ? 'Undefined jargon: ' + jargonWithoutDef.join(', ') + '.' : '');
+
+  const improvements = [];
+  if (avgSentLen > 24) improvements.push('Shorten your average sentence length (currently ~' + Math.round(avgSentLen) + ' words). Target 12–18 words per sentence. Break complex sentences in two.');
+  if (passiveRatio > 0.15) improvements.push('Reduce passive voice (~' + Math.round(passiveRatio*100) + '% of sentences). Replace "should be encouraged by parents" with "parents should encourage".');
+  if (jargonWithoutDef.length > 0) improvements.push('Define specialized terms inline: ' + jargonWithoutDef.map(j => '"' + j + '"').join(', ') + '. AI engines need clear definitions to correctly contextualize the content.');
+  if (transitionMatches < 3) improvements.push('Add transition words (however, therefore, for example) to help AI engines follow the logical flow of your argument.');
+  if (improvements.length === 0) improvements.push('Keep up the clarity. Optionally add a "plain language" summary at the start of each H2 section for maximum AI parseability.');
+  return { score, max: 15, feedback, improvements };
+}
+
+// ── HELPERS ──
+function getGrade(score) {
+  if (score >= 90) return 'A+';
+  if (score >= 80) return 'A';
+  if (score >= 73) return 'B+';
+  if (score >= 65) return 'B';
+  if (score >= 57) return 'C+';
+  if (score >= 48) return 'C';
+  if (score >= 38) return 'D';
+  return 'F';
+}
+
+function getGradeDesc(score) {
+  if (score >= 90) return 'Highly optimized for AI citation';
+  if (score >= 80) return 'Strong GEO — ready for AI engines';
+  if (score >= 73) return 'Good — a few targeted improvements needed';
+  if (score >= 65) return 'Decent foundation, needs reinforcement';
+  if (score >= 57) return 'Below average — significant gaps';
+  if (score >= 48) return 'Weak — major optimizations required';
+  if (score >= 38) return 'Poor — fundamental restructuring needed';
+  return 'Not AI-ready — requires complete revision';
+}
+
+function buildSummary(overall, f, a, s, ar, l) {
+  const dims = [
+    {label:'Factual Density', pct: f.score/f.max},
+    {label:'Authority Citations', pct: a.score/a.max},
+    {label:'Semantic Structure', pct: s.score/s.max},
+    {label:'Answer-Readiness', pct: ar.score/ar.max},
+    {label:'AI Legibility', pct: l.score/l.max},
+  ];
+  dims.sort((x,y) => y.pct - x.pct);
+  return 'This article scores ' + overall + '/100, placing it in the "' + getGrade(overall) + '" tier for GEO readiness. Its strongest dimension is ' + dims[0].label + ', while ' + dims[dims.length-1].label + ' presents the biggest opportunity for improvement. Addressing the top recommendations below could meaningfully increase citation probability on AI-powered engines like Perplexity, Claude, and ChatGPT Search.';
+}
+
+function buildRecommendations(f, a, s, ar, l, industry) {
+  const dimWeights = [
+    { dim: a, label: 'Authority Citations', weight: 20 },
+    { dim: s, label: 'Semantic Structure',  weight: 20 },
+    { dim: ar,label: 'Answer-Readiness',    weight: 20 },
+    { dim: f, label: 'Factual Density',     weight: 25 },
+    { dim: l, label: 'AI Legibility',       weight: 15 },
+  ];
+  dimWeights.sort((x, y) => (x.dim.score/x.weight) - (y.dim.score/y.weight));
+  const allRecs = [];
+  let highCount = 0, medCount = 0, lowCount = 0;
+  for (const dw of dimWeights) {
+    const pct = dw.dim.score / dw.weight;
+    const priority = pct < 0.45 ? 'high' : pct < 0.7 ? 'med' : 'low';
+    for (const imp of dw.dim.improvements) {
+      if (priority === 'high' && highCount < 2) { allRecs.push({ priority:'high', title:dw.label, description:imp }); highCount++; }
+      else if (priority === 'med' && medCount < 2) { allRecs.push({ priority:'med', title:dw.label, description:imp }); medCount++; }
+      else if (priority === 'low' && lowCount < 1) { allRecs.push({ priority:'low', title:dw.label, description:imp }); lowCount++; }
+      if (allRecs.length >= 5) break;
+    }
+    if (allRecs.length >= 5) break;
+  }
+  while (allRecs.length < 5) {
+    allRecs.push({ priority:'low', title:'General GEO Tip', description:'Consider adding a "Key Takeaways" box at the end with 3–5 bullet points summarizing the main insights. AI models frequently pull this format for featured snippets.' });
+  }
+  return allRecs.slice(0, 5);
+}
+
+// ══════════════════════════════════════════
+// ── UI & INIT ──
+// ══════════════════════════════════════════
+
+window.onload = () => { renderEmptyDimensions(); };
+
+function updateWordCount() {
+  const text = document.getElementById('article-input').value;
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  document.getElementById('word-count').textContent = words.toLocaleString() + ' words';
+}
+
+function renderEmptyDimensions() {
+  const container = document.getElementById('dimensions');
+  container.innerHTML = DIMS.map(d => `
+    <div class="dim-row">
+      <div class="dim-head">
+        <span class="dim-name">${d.label}</span>
+        <span class="dim-score" style="color:var(--text3)">—/${d.max}</span>
+      </div>
+      <div class="dim-bar"><div class="dim-bar-fill" id="bar-${d.key}" style="background:${d.color};width:0%"></div></div>
+    </div>
+  `).join('');
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  document.getElementById('error-text').textContent = msg;
+  el.classList.add('visible');
+}
+function hideError() { document.getElementById('error-msg').classList.remove('visible'); }
+
+const LOADING_MSGS = [
+  'Detecting factual density...','Evaluating authority citations...',
+  'Analyzing semantic structure...','Measuring answer-readiness...',
+  'Calculating AI legibility...','Generating recommendations...',
+];
+let loadingInterval;
+function startLoadingCycle() {
+  let i = 0;
+  document.getElementById('loading-text').textContent = LOADING_MSGS[0];
+  loadingInterval = setInterval(() => { i=(i+1)%LOADING_MSGS.length; document.getElementById('loading-text').textContent=LOADING_MSGS[i]; }, 600);
+}
+function stopLoadingCycle() { clearInterval(loadingInterval); }
+
+async function analyzeContent() {
+  if (isAnalyzing) return;
+  hideError();
+  const articleText = document.getElementById('article-input').value.trim();
+  const contentType = document.getElementById('content-type').value;
+  const industry    = document.getElementById('industry').value;
+  const targetLang  = document.getElementById('target-lang').value;
+  const targetModel = document.getElementById('target-model').value;
+  if (!articleText) { showError('Please paste your article text.'); return; }
+  if (articleText.trim().split(/\s+/).length < 50) { showError('The article must have at least 50 words for a meaningful analysis.'); return; }
+  isAnalyzing = true;
+  document.getElementById('btn-analyze').disabled = true;
+  document.getElementById('btn-analyze').classList.add('analyzing');
+  document.getElementById('btn-analyze').innerHTML = '<span>⬡</span> Analyzing…';
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('recs-card').classList.remove('visible');
+  document.getElementById('detail-card').classList.remove('visible');
+  document.getElementById('loading-state').classList.add('active');
+  startLoadingCycle();
+  await new Promise(r => setTimeout(r, 80));
+  try {
+    const result = analyzeOffline(articleText, contentType, industry, targetLang, targetModel);
+    await new Promise(r => setTimeout(r, 1200));
+    renderResults(result);
+  } catch(err) {
+    showError('Analysis error: ' + (err.message || 'Unknown error.'));
+    document.getElementById('empty-state').style.display = 'flex';
+  } finally {
+    isAnalyzing = false;
+    document.getElementById('btn-analyze').disabled = false;
+    document.getElementById('btn-analyze').classList.remove('analyzing');
+    document.getElementById('btn-analyze').innerHTML = '<span>🌱</span> Analyze & Score Article';
+    document.getElementById('loading-state').classList.remove('active');
+    stopLoadingCycle();
+  }
+}
+
+function renderResults(result) {
+  renderScoreRing(result.overall_score, result.grade, result.grade_description);
+  renderDimensions(result.dimensions);
+  renderRecommendations(result.top_recommendations);
+  renderDetailTabs(result.dimensions);
+}
+
+function getScoreColor(score) {
+  if (score >= 80) return '#3a5a2b';
+  if (score >= 60) return '#7a9e3a';
+  if (score >= 40) return '#c89b2a';
+  return '#c0392b';
+}
+
+function renderScoreRing(score, grade, desc) {
+  const circumference = 408;
+  const offset = circumference - (score/100)*circumference;
+  const color = getScoreColor(score);
+  const fill = document.getElementById('score-ring-fill');
+  fill.style.strokeDashoffset = offset;
+  fill.style.stroke = color;
+  fill.style.filter = 'drop-shadow(0 0 8px ' + color + '80)';
+  document.getElementById('score-display').innerHTML = '<strong style="color:'+color+'">'+score+'</strong><span>/100</span>';
+  document.getElementById('score-grade').textContent = grade;
+  document.getElementById('score-grade').style.color = color;
+  document.getElementById('score-grade-desc').textContent = desc;
+}
+
+function renderDimensions(dims) {
+  const container = document.getElementById('dimensions');
+  container.innerHTML = DIMS.map(d => {
+    const dd = dims[d.key]||{score:0,max:d.max};
+    return '<div class="dim-row"><div class="dim-head"><div><span class="dim-name">'+d.label+'</span><div class="dim-desc">'+d.desc+'</div></div><span class="dim-score">'+dd.score+'/'+dd.max+'</span></div><div class="dim-bar"><div class="dim-bar-fill" id="bar-'+d.key+'" style="background:'+d.color+';width:0%"></div></div></div>';
+  }).join('');
+  setTimeout(() => {
+    DIMS.forEach(d => {
+      const dd = dims[d.key]||{score:0,max:d.max};
+      const bar = document.getElementById('bar-'+d.key);
+      if (bar) bar.style.width = ((dd.score/dd.max)*100)+'%';
+    });
+  }, 100);
+}
+
+function renderRecommendations(recs) {
+  const icons = {high:'🔴',med:'🟡',low:'🟢'};
+  document.getElementById('recs-list').innerHTML = (recs||[]).map((r,i) =>
+    '<div class="rec-item" style="animation-delay:'+i*0.08+'s"><div class="rec-icon '+r.priority+'">'+(icons[r.priority]||'●')+'</div><div class="rec-body"><div class="rec-title">'+r.title+'</div><div class="rec-desc">'+r.description+'</div></div></div>'
+  ).join('');
+  document.getElementById('recs-card').classList.add('visible');
+}
+
+function renderDetailTabs(dims) {
+  const tabsEl = document.getElementById('detail-tabs');
+  const panelsEl = document.getElementById('detail-panels');
+  tabsEl.innerHTML = DIMS.map((d,i) => {
+    var cls = i===0 ? 'detail-tab active' : 'detail-tab';
+    return '<button class="'+cls+'" onclick="switchTab(\''+d.key+'\');" id="tab-'+d.key+'">'+d.label.split(' ')[0]+'</button>';
+  }).join('');
+  panelsEl.innerHTML = DIMS.map((d,i) => {
+    const dd = dims[d.key]||{score:0,max:d.max,feedback:'',improvements:[]};
+    const color = getScoreColor((dd.score/dd.max)*100);
+    return '<div class="detail-panel '+(i===0?'active':'')+'" id="panel-'+d.key+'"><div class="detail-score-big"><span class="num" style="color:'+color+'">'+dd.score+'</span><span class="denom">/ '+dd.max+' pts</span></div><div class="detail-feedback">'+(dd.feedback||'—')+'</div><div class="improvement-list">'+(dd.improvements||[]).map(imp=>'<div class="improvement-item">'+imp+'</div>').join('')+'</div></div>';
+  }).join('');
+  document.getElementById('detail-card').classList.add('visible');
+}
+
+function switchTab(key) {
+  DIMS.forEach(d => {
+    document.getElementById('tab-'+d.key)?.classList.toggle('active', d.key===key);
+    document.getElementById('panel-'+d.key)?.classList.toggle('active', d.key===key);
+  });
+}
+</script>
+</body>
+</html>
