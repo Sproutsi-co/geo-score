@@ -817,9 +817,9 @@
     <div class="card">
       <div class="section-label">01 — Content</div>
       <div class="card-title">Paste your article</div>
-      <div class="card-desc">Minimum 200 words for an accurate analysis. Include headings (H1, H2, H3) as plain text.</div>
+      <div class="card-desc">Minimum 200 words for an accurate analysis. Use <code style="background:var(--bg3);border:1px solid var(--border);padding:1px 5px;border-radius:4px;font-size:12px;color:var(--primary)">#</code> for H1, <code style="background:var(--bg3);border:1px solid var(--border);padding:1px 5px;border-radius:4px;font-size:12px;color:var(--primary)">##</code> for H2 and <code style="background:var(--bg3);border:1px solid var(--border);padding:1px 5px;border-radius:4px;font-size:12px;color:var(--primary)">###</code> for H3 headings so the analyzer can detect your structure.</div>
       <div class="textarea-wrapper">
-        <textarea id="article-input" placeholder="Paste the full text of your article here, including title and headings..." oninput="updateWordCount()"></textarea>
+        <textarea id="article-input" placeholder="# Your Article Title&#10;&#10;## Why Does This Topic Matter?&#10;&#10;Paste your article text here, using ## for H2 headings and ### for H3 subheadings..." oninput="updateWordCount()"></textarea>
         <div class="textarea-meta" id="word-count">0 words</div>
       </div>
     </div>
